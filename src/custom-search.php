@@ -16,7 +16,7 @@ require_once __DIR__ . '/query-extender.php';
  *
  * @param string|string[] $key_s Post meta keys.
  */
-function add_meta_key( $key_s ) {
+function add_meta_key( $key_s ): void {
 	$inst = _get_instance();
 	$ks   = is_array( $key_s ) ? $key_s : array( $key_s );
 
@@ -29,7 +29,7 @@ function add_meta_key( $key_s ) {
  * @param string          $slug        Search page slug.
  * @param string|string[] $post_type_s Post types.
  */
-function add_post_type_specific_page( string $slug, $post_type_s ) {
+function add_post_type_specific_page( string $slug, $post_type_s ): void {
 	$inst = _get_instance();
 	$slug = trim( $slug, '/' );
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
@@ -56,7 +56,7 @@ function add_post_type_specific_page( string $slug, $post_type_s ) {
  *     @type 'do_extend_query'       Whether do extend query. Default false.
  * }
  */
-function activate( $args = array() ) {
+function activate( $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -150,7 +150,7 @@ function _cb_search_rewrite_rules( array $rewrite ): array {
  *
  * @access private
  */
-function _cb_template_redirect() {
+function _cb_template_redirect(): void {
 	global $wp_rewrite;
 	if ( ! $wp_rewrite->using_permalinks() ) {
 		return;
@@ -237,7 +237,7 @@ function _cb_request( array $query_vars ): array {
  *
  * @param \WP_Query $query The WP_Query instance (passed by reference).
  */
-function _cb_pre_get_posts( \WP_Query $query ) {
+function _cb_pre_get_posts( \WP_Query $query ): void {
 	$inst = _get_instance();
 	if ( $query->is_search ) {
 		$val = $query->get( 'post_type' );
