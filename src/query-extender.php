@@ -89,7 +89,7 @@ function _extend_search_terms( array $terms, string $exclusion_prefix ): array {
 			$ret[] = $term;
 			continue;
 		}
-		$sts = array_map( '\st\mb_trim', mb_split( '[「『（［｛〈《【〔〖〘〚＜」』）］｝〉》】〕〗〙〛＞、，。．？！：・]+', $term ) );
+		$sts = array_map( '\wpinc\ref\_mb_trim', mb_split( '[「『（［｛〈《【〔〖〘〚＜」』）］｝〉》】〕〗〙〛＞、，。．？！：・]+', $term ) );
 		foreach ( $sts as $t ) {
 			if ( empty( $t ) ) {
 				continue;
@@ -103,6 +103,18 @@ function _extend_search_terms( array $terms, string $exclusion_prefix ): array {
 		}
 	}
 	return $ret;
+}
+
+/**
+ * Trims string.
+ *
+ * @access private
+ *
+ * @param string $str String.
+ * @return string Trimmed string.
+ */
+function _mb_trim( string $str ): string {
+	return preg_replace( '/\A[\p{C}\p{Z}]++|[\p{C}\p{Z}]++\z/u', '', $str );
 }
 
 /**
