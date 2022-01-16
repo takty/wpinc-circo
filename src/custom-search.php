@@ -16,7 +16,7 @@ require_once __DIR__ . '/query-extender.php';
  *
  * @param string|string[] $key_s Post meta keys.
  */
-function add_meta_key( mixed $key_s ) {
+function add_meta_key( $key_s ) {
 	$inst = _get_instance();
 	$ks   = is_array( $key_s ) ? $key_s : array( $key_s );
 
@@ -29,7 +29,7 @@ function add_meta_key( mixed $key_s ) {
  * @param string          $slug        Search page slug.
  * @param string|string[] $post_type_s Post types.
  */
-function add_post_type_specific_page( string $slug, mixed $post_type_s ) {
+function add_post_type_specific_page( string $slug, $post_type_s ) {
 	$inst = _get_instance();
 	$slug = trim( $slug, '/' );
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
