@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2022-01-16
+ * @version 2022-01-25
  */
 
 namespace wpinc\ref;
@@ -56,7 +56,7 @@ function add_post_type_specific_page( string $slug, $post_type_s ): void {
  *     @type 'do_extend_query'       Whether do extend query. Default false.
  * }
  */
-function activate( $args = array() ): void {
+function activate( array $args = array() ): void {
 	static $activated = 0;
 	if ( $activated++ ) {
 		return;
@@ -67,6 +67,7 @@ function activate( $args = array() ): void {
 		'home_url_function'     => '\home_url',
 		'target_post_types'     => array(),
 		'do_allow_slash'        => true,
+		'do_target_post_meta'   => true,
 		'do_enable_blank_query' => true,
 		'do_enable_custom_page' => false,
 		'do_extend_query'       => false,
@@ -213,9 +214,10 @@ function _home_url( string $path ): string {
  * @return array Variables.
  */
 function _cb_request( array $query_vars ): array {
+	$inst = _get_instance();
 	if ( $inst->do_enable_custom_page ) {
 		if ( ! is_admin() && isset( $query_vars['s'] ) ) {
-				$query_vars['pagename'] = '';
+			$query_vars['pagename'] = '';
 		}
 	}
 	if ( $inst->do_allow_slash ) {
@@ -295,12 +297,12 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
  *
  * @access private
  *
- * @param string $term             Term.
- * @param string $exclusion_prefix Exclusion prefix.
- * @param string $exact            Query 'exact'.
+ * @param string      $term             Term.
+ * @param string      $exclusion_prefix Exclusion prefix.
+ * @param string|null $exact            Query 'exact'.
  * @return string Query.
  */
-function _create_query( string $term, string $exclusion_prefix, string $exact ): string {
+function _create_query( string $term, string $exclusion_prefix, ?string $exact ): string {
 	global $wpdb;
 	$search = '';
 	$n      = ! empty( $exact ) ? '' : '%';
