@@ -4,10 +4,10 @@
  *
  * @package Sample
  * @author Takuto Yanagida
- * @version 2022-01-26
+ * @version 2022-02-07
  */
 
-namespace sample;
+namespace sample\search;
 
 require_once __DIR__ . '/ref/custom-search.php';
 
