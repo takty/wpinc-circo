@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2022-01-25
+ * @version 2022-02-09
  */
 
 namespace wpinc\ref;
@@ -279,7 +279,7 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
 		if ( $inst->do_extend_query && is_array( $term ) ) {
 			$search .= "$searchand(" . _create_extended_query( $term ) . ')';
 		} else {
-			$search .= "$searchand(" . _create_query( $term, $exclusion_prefix, $q['exact'] ) . ')';
+			$search .= "$searchand(" . _create_query( $term, $exclusion_prefix, $q['exact'] ?? null ) . ')';
 		}
 		$searchand = ' AND ';
 	}
@@ -303,6 +303,7 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
  * @return string Query.
  */
 function _create_query( string $term, string $exclusion_prefix, ?string $exact ): string {
+	$inst = _get_instance();
 	global $wpdb;
 	$search = '';
 	$n      = ! empty( $exact ) ? '' : '%';
