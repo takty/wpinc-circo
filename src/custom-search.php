@@ -68,18 +68,20 @@ function activate( array $args = array() ): void {
 		'target_post_types'     => array(),
 		'do_allow_slash'        => true,
 		'do_target_post_meta'   => true,
-		'do_enable_blank_query' => true,
 		'do_enable_custom_page' => false,
 		'do_extend_query'       => false,
+		'do_enable_blank_query' => true,
+		'blank_query_title'     => '',
 	);
 
 	$inst->home_url_fn           = $args['home_url_function'];
 	$inst->target_post_types     = $args['target_post_types'];
 	$inst->do_allow_slash        = $args['do_allow_slash'];
 	$inst->do_target_post_meta   = $args['do_target_post_meta'];
-	$inst->do_enable_blank_query = $args['do_enable_blank_query'];
 	$inst->do_enable_custom_page = $args['do_enable_custom_page'];
 	$inst->do_extend_query       = $args['do_extend_query'];
+	$inst->do_enable_blank_query = $args['do_enable_blank_query'];
+	$inst->blank_query_title     = $args['blank_query_title'];
 
 	if ( ! empty( $inst->meta_keys ) ) {
 		$inst->do_target_post_meta = true;
@@ -103,6 +105,9 @@ function activate( array $args = array() ): void {
 	if ( $inst->do_allow_slash || $inst->do_enable_custom_page ) {
 		add_filter( 'request', '\wpinc\ref\_cb_request', 20, 1 );
 	}
+	if ( $inst->do_enable_blank_query ) {
+		add_filter( 'document_title_parts', '\wpinc\ref\_cb_document_title_parts' );
+	}
 	if ( $inst->do_enable_blank_query || ! empty( $inst->slug_to_pts ) ) {
 		add_filter( 'search_rewrite_rules', '\wpinc\ref\_cb_search_rewrite_rules' );
 	}
@@ -114,6 +119,20 @@ function activate( array $args = array() ): void {
 
 // -----------------------------------------------------------------------------
 
+
+/**
+ * Callback function for 'document_title_parts' filter.
+ *
+ * @param array $title The document title parts.
+ * @return array Document title parts.
+ */
+function _cb_document_title_parts( array $title ): array {
+	$inst = _get_instance();
+	if ( is_search() && empty( get_search_query() ) ) {
+		$title['title'] = $inst->blank_query_title;
+	}
+	return $title;
+}
 
 /**
  * Callback function for 'search_rewrite_rules' filter.
@@ -450,13 +469,6 @@ function _get_instance(): object {
 		public $do_target_post_meta = true;
 
 		/**
-		 * Whether do enable blank query.
-		 *
-		 * @var bool
-		 */
-		public $do_enable_blank_query = true;
-
-		/**
 		 * Whether do enable custom search page.
 		 *
 		 * @var bool
@@ -469,6 +481,20 @@ function _get_instance(): object {
 		 * @var bool
 		 */
 		public $do_extend_query = false;
+
+		/**
+		 * Whether do enable blank query.
+		 *
+		 * @var bool
+		 */
+		public $do_enable_blank_query = true;
+
+		/**
+		 * Document title when query is empty.
+		 *
+		 * @var string
+		 */
+		public $blank_query_title = '';
 
 		/**
 		 * Array of meta keys that are handled as searching target.
