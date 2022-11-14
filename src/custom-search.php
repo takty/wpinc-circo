@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2022-02-09
+ * @version 2022-11-14
  */
 
 namespace wpinc\ref;
@@ -415,7 +415,7 @@ function _cb_posts_groupby( string $groupby, \WP_Query $query ): string {
  */
 function _urlencode( string $str ): string {
 	$inst = _get_instance();
-	if ( $inst->is_slash_in_query_enabled ) {
+	if ( $inst->do_allow_slash ) {
 		$ret = rawurlencode( $str );
 		return str_replace( array( '%2f', '%2F' ), array( '%1f', '%1F' ), $ret );
 	} else {
