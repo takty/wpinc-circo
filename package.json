@@ -5,6 +5,7 @@
 	"author": "Takuto Yanagida",
 	"main": "gulpfile.js",
 	"scripts": {
+		"postinstall": "gulp build",
 		"start": "gulp"
 	},
 	"repository": {
