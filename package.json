@@ -23,11 +23,10 @@
 		"not ie <= 11",
 		"not dead"
 	],
-	"devDependencies": {
+	"dependencies": {
 		"gulp": "^4.0.2",
 		"gulp-changed": "^4.0.3",
 		"gulp-ignore": "^3.0.0",
-		"gulp-load-plugins": "^2.0.8",
 		"gulp-plumber": "^1.2.1"
 	}
 }
