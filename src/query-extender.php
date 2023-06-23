@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2022-01-16
+ * @version 2023-06-22
  */
 
 namespace wpinc\ref;
@@ -52,15 +52,16 @@ function _cb_posts_request( string $request, \WP_Query $query ): string {
  *
  * @access private
  *
- * @param string[] $likes Terms.
+ * @param string[] $likes               Terms.
+ * @param bool     $do_target_post_meta Whether do search for post meta values.
  * @return string Query.
  */
-function _create_extended_query( array $likes ): string {
+function _create_extended_query( array $likes, bool $do_target_post_meta ): string {
 	global $wpdb;
 	$search = '';
 	$sh     = '';
 	foreach ( $likes as $like ) {
-		if ( $inst->do_target_post_meta ) {
+		if ( $do_target_post_meta ) {
 			$t       = "{$sh}(($wpdb->posts.post_title LIKE %s) OR ({$wpdb->posts}.post_excerpt LIKE %s) OR ($wpdb->posts.post_content LIKE %s) OR (postmeta_wpinc_ref.meta_value LIKE %s))";
 			$search .= $wpdb->prepare( $t, $like, $like, $like, $like );  // phpcs:ignore
 		} else {
