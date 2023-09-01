@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-06-22
+ * @version 2023-09-01
  */
 
 namespace wpinc\ref;
@@ -44,7 +44,7 @@ function add_post_type_specific_page( string $slug, $post_type_s ): void {
 /**
  * Activates the search.
  *
- * @param array $args {
+ * @param array<string, mixed> $args {
  *     Arguments.
  *
  *     @type 'home_url_function'     Callable for getting home URL link. Default '\home_url'.
@@ -112,7 +112,7 @@ function activate( array $args = array() ): void {
 		add_filter( 'search_rewrite_rules', '\wpinc\ref\_cb_search_rewrite_rules' );
 	}
 	if ( $inst->do_enable_blank_query || ! empty( $inst->slug_to_pts ) || $inst->do_enable_custom_page ) {
-		add_filter( 'template_redirect', '\wpinc\ref\_cb_template_redirect' );
+		add_action( 'template_redirect', '\wpinc\ref\_cb_template_redirect' );
 	}
 }
 
@@ -123,8 +123,8 @@ function activate( array $args = array() ): void {
 /**
  * Callback function for 'document_title_parts' filter.
  *
- * @param array $title The document title parts.
- * @return array Document title parts.
+ * @param string[] $title The document title parts.
+ * @return string[] Document title parts.
  */
 function _cb_document_title_parts( array $title ): array {
 	$inst = _get_instance();
@@ -229,8 +229,8 @@ function _home_url( string $path ): string {
  *
  * @access private
  *
- * @param array $query_vars The array of requested query variables.
- * @return array Variables.
+ * @param array<string, mixed> $query_vars The array of requested query variables.
+ * @return array<string, mixed> Variables.
  */
 function _cb_request( array $query_vars ): array {
 	$inst = _get_instance();
@@ -369,7 +369,9 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 	if ( ! empty( $inst->meta_keys ) ) {
 		$_mks = array();
 		foreach ( $inst->meta_keys as $mk ) {
-			$_mks[] = "'" . esc_sql( $mk ) . "'";
+			if ( is_string( $mk ) ) {
+				$_mks[] = "'" . esc_sql( $mk ) . "'";
+			}
 		}
 		$sql_mks = implode( ', ', $_mks );
 	}
@@ -506,7 +508,7 @@ function _get_instance(): object {
 		/**
 		 * Array of slug to post types.
 		 *
-		 * @var array
+		 * @var array<string, string[]>
 		 */
 		public $slug_to_pts = array();
 	};

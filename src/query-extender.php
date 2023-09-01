@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-06-22
+ * @version 2023-09-01
  */
 
 namespace wpinc\ref;
@@ -78,9 +78,9 @@ function _create_extended_query( array $likes, bool $do_target_post_meta ): stri
  *
  * @access private
  *
- * @param array  $terms            Search terms.
- * @param string $exclusion_prefix Exclusion prefix.
- * @return array Terms.
+ * @param string[] $terms            Search terms.
+ * @param string   $exclusion_prefix Exclusion prefix.
+ * @return array<string|string[]> Terms.
  */
 function _extend_search_terms( array $terms, string $exclusion_prefix ): array {
 	$ret = array();
@@ -90,7 +90,11 @@ function _extend_search_terms( array $terms, string $exclusion_prefix ): array {
 			$ret[] = $term;
 			continue;
 		}
-		$sts = array_map( '\wpinc\ref\_mb_trim', mb_split( '[「『（［｛〈《【〔〖〘〚＜」』）］｝〉》】〕〗〙〛＞、，。．？！：・]+', $term ) );
+		$sts = mb_split( '[「『（［｛〈《【〔〖〘〚＜」』）］｝〉》】〕〗〙〛＞、，。．？！：・]+', $term );
+		if ( ! $sts ) {
+			$sts = array();
+		}
+		$sts = array_map( '\wpinc\ref\_mb_trim', $sts );
 		foreach ( $sts as $t ) {
 			if ( empty( $t ) ) {
 				continue;
@@ -115,7 +119,7 @@ function _extend_search_terms( array $terms, string $exclusion_prefix ): array {
  * @return string Trimmed string.
  */
 function _mb_trim( string $str ): string {
-	return preg_replace( '/\A[\p{C}\p{Z}]++|[\p{C}\p{Z}]++\z/u', '', $str );
+	return preg_replace( '/\A[\p{C}\p{Z}]++|[\p{C}\p{Z}]++\z/u', '', $str ) ?? $str;
 }
 
 /**
@@ -124,35 +128,37 @@ function _mb_trim( string $str ): string {
  * @access private
  *
  * @param string $term Term string.
- * @return array Terms.
+ * @return string[] Terms.
  */
 function _split_term( string $term ): array {
 	global $wpdb;
 	$bis = array();
 	$chs = preg_split( '//u', $term, -1, PREG_SPLIT_NO_EMPTY );
-	$sws = array_map(
-		function ( $ch ) {
-			return mb_strwidth( $ch );
-		},
-		$chs
-	);
+	if ( $chs ) {
+		$sws = array_map(
+			function ( $ch ) {
+				return mb_strwidth( $ch );
+			},
+			$chs
+		);
 
-	$temp = '';
-	foreach ( $chs as $i => $ch ) {
-		if ( 2 === $sws[ $i ] ) {
-			if ( '' !== $temp ) {
-				$bis[] = $temp;
-				$temp  = '';
+		$temp = '';
+		foreach ( $chs as $i => $ch ) {
+			if ( 2 === $sws[ $i ] ) {
+				if ( '' !== $temp ) {
+					$bis[] = $temp;
+					$temp  = '';
+				}
+				if ( isset( $chs[ $i + 1 ] ) && 2 === $sws[ $i + 1 ] ) {
+					$bis[] = $ch . $chs[ $i + 1 ];
+				}
+			} else {
+				$temp .= $ch;
 			}
-			if ( isset( $chs[ $i + 1 ] ) && 2 === $sws[ $i + 1 ] ) {
-				$bis[] = $ch . $chs[ $i + 1 ];
-			}
-		} else {
-			$temp .= $ch;
 		}
-	}
-	if ( '' !== $temp ) {
-		$bis[] = $temp;
+		if ( '' !== $temp ) {
+			$bis[] = $temp;
+		}
 	}
 	$ret  = array( '%' . $wpdb->esc_like( $term ) . '%' );
 	$size = count( $bis );
