@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-09-01
+ * @version 2023-09-20
  */
 
 namespace wpinc\ref;
@@ -282,7 +282,7 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
 	if ( ! $query->is_search() || ! $query->is_main_query() || empty( $search ) ) {
 		return $search;
 	}
-	$q = $query->query_vars;
+	$q = &$query->query_vars;
 
 	global $wpdb;
 	$search           = '';
@@ -298,7 +298,7 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
 		if ( $inst->do_extend_query && is_array( $term ) ) {
 			$search .= "$searchand(" . _create_extended_query( $term, $inst->do_target_post_meta ) . ')';
 		} else {
-			$search .= "$searchand(" . _create_query( $term, $exclusion_prefix, $q['exact'] ?? null ) . ')';
+			$search .= "$searchand(" . _create_query( $term, $exclusion_prefix, $q['exact'] ?? null, $q ) . ')';
 		}
 		$searchand = ' AND ';
 	}
@@ -316,12 +316,13 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
  *
  * @access private
  *
- * @param string      $term             Term.
- * @param string      $exclusion_prefix Exclusion prefix.
- * @param string|null $exact            Query 'exact'.
+ * @param string               $term             Term.
+ * @param string               $exclusion_prefix Exclusion prefix.
+ * @param string|null          $exact            Query 'exact'.
+ * @param array<string, mixed> $q                Query variables (passed by reference).
  * @return string Query.
  */
-function _create_query( string $term, string $exclusion_prefix, ?string $exact ): string {
+function _create_query( string $term, string $exclusion_prefix, ?string $exact, array &$q ): string {
 	$inst = _get_instance();
 	global $wpdb;
 	$search = '';
