@@ -4,8 +4,10 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-09-20
+ * @version 2023-11-04
  */
+
+declare(strict_types=1);
 
 namespace wpinc\ref;
 
@@ -20,7 +22,7 @@ function add_meta_key( $key_s ): void {
 	$inst = _get_instance();
 	$ks   = is_array( $key_s ) ? $key_s : array( $key_s );
 
-	$inst->meta_keys = array_merge( $inst->meta_keys, $ks );
+	$inst->meta_keys = array_merge( $inst->meta_keys, $ks );  // @phpstan-ignore-line
 }
 
 /**
@@ -35,16 +37,28 @@ function add_post_type_specific_page( string $slug, $post_type_s ): void {
 	$pts  = is_array( $post_type_s ) ? $post_type_s : array( $post_type_s );
 
 	if ( isset( $inst->slug_to_pts[ $slug ] ) ) {
-		$inst->slug_to_pts[ $slug ] = array_merge( $inst->slug_to_pts[ $slug ], $pts );
+		$inst->slug_to_pts[ $slug ] = array_merge( $inst->slug_to_pts[ $slug ], $pts );  // @phpstan-ignore-line
 	} else {
-		$inst->slug_to_pts[ $slug ] = $pts;
+		$inst->slug_to_pts[ $slug ] = $pts;  // @phpstan-ignore-line
 	}
 }
 
-/**
+/** phpcs:ignore
  * Activates the search.
  *
- * @param array<string, mixed> $args {
+ * phpcs:ignore
+ * @param array{
+ *     home_url_function?    : callable,
+ *     target_post_types?    : string[],
+ *     do_allow_slash?       : bool,
+ *     do_target_post_meta?  : bool,
+ *     do_enable_blank_query?: bool,
+ *     do_enable_custom_page?: bool,
+ *     do_extend_query?      : bool,
+ *     blank_query_title?    : string,
+ * } $args Arguments.
+ *
+ * $args {
  *     Arguments.
  *
  *     @type 'home_url_function'     Callable for getting home URL link. Default '\home_url'.
@@ -54,6 +68,7 @@ function add_post_type_specific_page( string $slug, $post_type_s ): void {
  *     @type 'do_enable_blank_query' Whether do enable blank query. Default true.
  *     @type 'do_enable_custom_page' Whether do enable custom search page. Default false.
  *     @type 'do_extend_query'       Whether do extend query. Default false.
+ *     @type 'blank_query_title'     Document title when query is empty. Default ''.
  * }
  */
 function activate( array $args = array() ): void {
@@ -74,17 +89,17 @@ function activate( array $args = array() ): void {
 		'blank_query_title'     => '',
 	);
 
-	$inst->home_url_fn           = $args['home_url_function'];
-	$inst->target_post_types     = $args['target_post_types'];
-	$inst->do_allow_slash        = $args['do_allow_slash'];
-	$inst->do_target_post_meta   = $args['do_target_post_meta'];
-	$inst->do_enable_custom_page = $args['do_enable_custom_page'];
-	$inst->do_extend_query       = $args['do_extend_query'];
-	$inst->do_enable_blank_query = $args['do_enable_blank_query'];
-	$inst->blank_query_title     = $args['blank_query_title'];
+	$inst->home_url_fn           = $args['home_url_function'];  // @phpstan-ignore-line
+	$inst->target_post_types     = $args['target_post_types'];  // @phpstan-ignore-line
+	$inst->do_allow_slash        = $args['do_allow_slash'];  // @phpstan-ignore-line
+	$inst->do_target_post_meta   = $args['do_target_post_meta'];  // @phpstan-ignore-line
+	$inst->do_enable_custom_page = $args['do_enable_custom_page'];  // @phpstan-ignore-line
+	$inst->do_extend_query       = $args['do_extend_query'];  // @phpstan-ignore-line
+	$inst->do_enable_blank_query = $args['do_enable_blank_query'];  // @phpstan-ignore-line
+	$inst->blank_query_title     = $args['blank_query_title'];  // @phpstan-ignore-line
 
 	if ( ! empty( $inst->meta_keys ) ) {
-		$inst->do_target_post_meta = true;
+		$inst->do_target_post_meta = true;  // @phpstan-ignore-line
 	}
 
 	if ( $inst->do_target_post_meta || $inst->do_extend_query ) {
@@ -138,6 +153,7 @@ function _cb_document_title_parts( array $title ): array {
  * Callback function for 'search_rewrite_rules' filter.
  *
  * @access private
+ * @global \WP_Rewrite $wp_rewrite
  *
  * @param string[] $rewrite Array of rewrite rules for search queries, keyed by their regex pattern.
  * @return string[] Array of rewrite rules.
@@ -169,17 +185,18 @@ function _cb_search_rewrite_rules( array $rewrite ): array {
  * Callback function for 'template_redirect' action.
  *
  * @access private
+ * @global \WP_Rewrite $wp_rewrite
  */
 function _cb_template_redirect(): void {
 	global $wp_rewrite;
 	if ( ! $wp_rewrite->using_permalinks() ) {
 		return;
 	}
-	if ( is_search() && ! is_admin() && isset( $_GET['s'] ) ) {  // phpcs:ignore
+	if ( is_search() && ! is_admin() && isset( $_GET['s'] ) && is_string( get_query_var( 's' ) ) ) {  // phpcs:ignore
 		$search_base = $wp_rewrite->search_base;
 		$home_url    = _home_url( "/$search_base/" );
 		$post_type_s = $_GET['post_type'] ?? '';  // phpcs:ignore
-		if ( ! empty( $post_type_s ) ) {
+		if ( is_string( $post_type_s ) && ! empty( $post_type_s ) ) {
 			$pts  = explode( ',', $post_type_s );
 			$slug = _get_matching_slug( $pts );
 			if ( ! empty( $slug ) ) {
@@ -240,7 +257,7 @@ function _cb_request( array $query_vars ): array {
 		}
 	}
 	if ( $inst->do_allow_slash ) {
-		if ( ! is_admin() && isset( $query_vars['s'] ) ) {
+		if ( ! is_admin() && isset( $query_vars['s'] ) && is_string( $query_vars['s'] ) ) {
 			$query_vars['s'] = str_replace(
 				array( '%1f', '%1F' ),
 				array( '%2f', '%2F' ),
@@ -272,6 +289,7 @@ function _cb_pre_get_posts( \WP_Query $query ): void {
  * Callback function for 'posts_search' filter.
  *
  * @access private
+ * @global \wpdb $wpdb
  *
  * @param string    $search Search SQL for WHERE clause.
  * @param \WP_Query $query  The WP_Query instance (passed by reference).
@@ -315,6 +333,8 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
  * Makes query.
  *
  * @access private
+ * @global \wpdb $wpdb
+ * @psalm-suppress PossiblyNullOperand
  *
  * @param string               $term             Term.
  * @param string               $exclusion_prefix Exclusion prefix.
@@ -338,16 +358,19 @@ function _create_query( string $term, string $exclusion_prefix, ?string $exact, 
 		$andor_op = 'OR';
 	}
 	if ( $n && ! $exclude ) {
-		$like                        = '%' . $wpdb->esc_like( $term ) . '%';
+		$like = '%' . $wpdb->esc_like( $term ) . '%';
+		if ( ! isset( $q['search_orderby_title'] ) || ! is_array( $q['search_orderby_title'] ) ) {
+			$q['search_orderby_title'] = array();
+		}
 		$q['search_orderby_title'][] = $wpdb->prepare( "{$wpdb->posts}.post_title LIKE %s", $like );
 	}
 	$like = $n . $wpdb->esc_like( $term ) . $n;
 	if ( $inst->do_target_post_meta ) {
 		$t       = "($wpdb->posts.post_title $like_op %s) $andor_op ({$wpdb->posts}.post_excerpt $like_op %s) $andor_op ($wpdb->posts.post_content $like_op %s) $andor_op (postmeta_wpinc_ref.meta_value $like_op %s)";
-		$search .= $wpdb->prepare( $t, $like, $like, $like, $like );  // phpcs:ignore
+		$search .= $wpdb->prepare( $t, array( $like, $like, $like, $like ) );  // phpcs:ignore
 	} else {
 		$t       = "($wpdb->posts.post_title $like_op %s) $andor_op ({$wpdb->posts}.post_excerpt $like_op %s) $andor_op ($wpdb->posts.post_content $like_op %s)";
-		$search .= $wpdb->prepare( $t, $like, $like, $like );  // phpcs:ignore
+		$search .= $wpdb->prepare( $t, array( $like, $like, $like ) );  // phpcs:ignore
 	}
 	return $search;
 }
@@ -356,6 +379,8 @@ function _create_query( string $term, string $exclusion_prefix, ?string $exact, 
  * Callback function for 'posts_join' filter.
  *
  * @access private
+ * @global \wpdb $wpdb
+ * @psalm-suppress PossiblyInvalidOperand
  *
  * @param string    $join  The JOIN clause of the query.
  * @param \WP_Query $query The WP_Query instance (passed by reference).
@@ -370,9 +395,7 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 	if ( ! empty( $inst->meta_keys ) ) {
 		$_mks = array();
 		foreach ( $inst->meta_keys as $mk ) {
-			if ( is_string( $mk ) ) {
-				$_mks[] = "'" . esc_sql( $mk ) . "'";
-			}
+			$_mks[] = "'" . esc_sql( $mk ) . "'";
 		}
 		$sql_mks = implode( ', ', $_mks );
 	}
@@ -391,6 +414,7 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
  * Callback function for 'posts_groupby' filter.
  *
  * @access private
+ * @global \wpdb $wpdb
  *
  * @param string    $groupby The GROUP BY clause of the query.
  * @param \WP_Query $query   The WP_Query instance (passed by reference).
@@ -435,7 +459,18 @@ function _urlencode( string $str ): string {
  *
  * @access private
  *
- * @return object Instance.
+ * @return object{
+ *     home_url_fn          : callable,
+ *     target_post_types    : string[],
+ *     do_allow_slash       : bool,
+ *     do_target_post_meta  : bool,
+ *     do_enable_custom_page: bool,
+ *     do_extend_query      : bool,
+ *     do_enable_blank_query: bool,
+ *     blank_query_title    : string,
+ *     meta_keys            : string[],
+ *     slug_to_pts          : array<string, string[]>,
+ * } Instance.
  */
 function _get_instance(): object {
 	static $values = null;

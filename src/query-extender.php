@@ -4,8 +4,10 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-09-01
+ * @version 2023-11-04
  */
+
+declare(strict_types=1);
 
 namespace wpinc\ref;
 
@@ -13,6 +15,7 @@ namespace wpinc\ref;
  * Callback function for 'posts_search_orderby' filter.
  *
  * @access private
+ * @global \wpdb $wpdb
  *
  * @param string    $orderby The ORDER BY clause of the query.
  * @param \WP_Query $query   The WP_Query instance (passed by reference).
@@ -30,6 +33,7 @@ function _cb_posts_search_orderby( string $orderby, \WP_Query $query ): string {
  * Callback function for 'posts_request' filter.
  *
  * @access private
+ * @global \wpdb $wpdb
  *
  * @param string    $request The complete SQL query.
  * @param \WP_Query $query   The WP_Query instance (passed by reference).
@@ -51,6 +55,8 @@ function _cb_posts_request( string $request, \WP_Query $query ): string {
  * Makes extended query.
  *
  * @access private
+ * @global \wpdb $wpdb
+ * @psalm-suppress PossiblyNullOperand
  *
  * @param string[] $likes               Terms.
  * @param bool     $do_target_post_meta Whether do search for post meta values.
@@ -63,10 +69,10 @@ function _create_extended_query( array $likes, bool $do_target_post_meta ): stri
 	foreach ( $likes as $like ) {
 		if ( $do_target_post_meta ) {
 			$t       = "{$sh}(($wpdb->posts.post_title LIKE %s) OR ({$wpdb->posts}.post_excerpt LIKE %s) OR ($wpdb->posts.post_content LIKE %s) OR (postmeta_wpinc_ref.meta_value LIKE %s))";
-			$search .= $wpdb->prepare( $t, $like, $like, $like, $like );  // phpcs:ignore
+			$search .= $wpdb->prepare( $t, array( $like, $like, $like, $like ) );  // phpcs:ignore
 		} else {
 			$t       = "{$sh}(($wpdb->posts.post_title LIKE %s) OR ({$wpdb->posts}.post_excerpt LIKE %s) OR ($wpdb->posts.post_content LIKE %s))";
-			$search .= $wpdb->prepare( $t, $like, $like, $like );  // phpcs:ignore
+			$search .= $wpdb->prepare( $t, array( $like, $like, $like ) );  // phpcs:ignore
 		}
 		$sh = ' OR ';
 	}
@@ -126,6 +132,7 @@ function _mb_trim( string $str ): string {
  * Splits a term.
  *
  * @access private
+ * @global \wpdb $wpdb
  *
  * @param string $term Term string.
  * @return string[] Terms.
