@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-11-04
+ * @version 2023-12-26
  */
 
 declare(strict_types=1);
@@ -174,8 +174,9 @@ function _cb_search_rewrite_rules( array $rewrite ): array {
 		foreach ( $inst->slug_to_pts as $slug => $pts ) {
 			$pts_str = implode( ',', $pts );
 
-			$rewrite[ "$slug/$search_base/(.+)/?$" ] = 'index.php?post_type=' . $pts_str . '&s=$matches[1]';
-			$rewrite[ "$slug/$search_base/?$" ]      = 'index.php?post_type=' . $pts_str . '&s=';
+			$rewrite[ "$slug/$search_base/(.+)/page/?([0-9]{1,})/?$" ] = 'index.php?post_type=' . $pts_str . '&s=$matches[1]&paged=$matches[2]';
+			$rewrite[ "$slug/$search_base/(.+)/?$" ]                   = 'index.php?post_type=' . $pts_str . '&s=$matches[1]';
+			$rewrite[ "$slug/$search_base/?$" ]                        = 'index.php?post_type=' . $pts_str . '&s=';
 		}
 	}
 	return $rewrite;
@@ -192,10 +193,11 @@ function _cb_template_redirect(): void {
 	if ( ! $wp_rewrite->using_permalinks() ) {
 		return;
 	}
-	if ( is_search() && ! is_admin() && isset( $_GET['s'] ) && is_string( get_query_var( 's' ) ) ) {  // phpcs:ignore
+	$s = get_query_var( 's', null );
+	if ( is_search() && ! is_admin() && isset( $_GET['s'] ) && is_string( $s ) ) {  // phpcs:ignore
 		$search_base = $wp_rewrite->search_base;
 		$home_url    = _home_url( "/$search_base/" );
-		$post_type_s = $_GET['post_type'] ?? '';  // phpcs:ignore
+		$post_type_s = get_query_var( 'post_type', null );
 		if ( is_string( $post_type_s ) && ! empty( $post_type_s ) ) {
 			$pts  = explode( ',', $post_type_s );
 			$slug = _get_matching_slug( $pts );
@@ -203,7 +205,7 @@ function _cb_template_redirect(): void {
 				$home_url = _home_url( "/$slug/$search_base/" );
 			}
 		}
-		wp_safe_redirect( $home_url . _urlencode( get_query_var( 's' ) ) );
+		wp_safe_redirect( $home_url . _urlencode( $s ) );
 		exit;
 	}
 }
@@ -277,7 +279,7 @@ function _cb_request( array $query_vars ): array {
  */
 function _cb_pre_get_posts( \WP_Query $query ): void {
 	$inst = _get_instance();
-	if ( $query->is_search ) {
+	if ( $query->is_search() ) {
 		$val = $query->get( 'post_type' );
 		if ( empty( $val ) ) {
 			$query->set( 'post_type', $inst->target_post_types );
