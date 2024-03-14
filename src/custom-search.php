@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-12-26
+ * @version 2024-03-14
  */
 
 declare(strict_types=1);
@@ -127,7 +127,7 @@ function activate( array $args = array() ): void {
 		add_filter( 'search_rewrite_rules', '\wpinc\ref\_cb_search_rewrite_rules' );
 	}
 	if ( $inst->do_enable_blank_query || ! empty( $inst->slug_to_pts ) || $inst->do_enable_custom_page ) {
-		add_action( 'template_redirect', '\wpinc\ref\_cb_template_redirect' );
+		add_action( 'template_redirect', '\wpinc\ref\_cb_template_redirect', 10, 0 );
 	}
 }
 
@@ -143,7 +143,7 @@ function activate( array $args = array() ): void {
  */
 function _cb_document_title_parts( array $title ): array {
 	$inst = _get_instance();
-	if ( is_search() && empty( get_search_query() ) ) {
+	if ( is_search() && '' === get_search_query() ) {
 		$title['title'] = $inst->blank_query_title;
 	}
 	return $title;
@@ -198,10 +198,10 @@ function _cb_template_redirect(): void {
 		$search_base = $wp_rewrite->search_base;
 		$home_url    = _home_url( "/$search_base/" );
 		$post_type_s = get_query_var( 'post_type', null );
-		if ( is_string( $post_type_s ) && ! empty( $post_type_s ) ) {
+		if ( is_string( $post_type_s ) && '' !== $post_type_s ) {  // Check for non-empty-string.
 			$pts  = explode( ',', $post_type_s );
 			$slug = _get_matching_slug( $pts );
-			if ( ! empty( $slug ) ) {
+			if ( '' !== $slug ) {
 				$home_url = _home_url( "/$slug/$search_base/" );
 			}
 		}
@@ -281,7 +281,7 @@ function _cb_pre_get_posts( \WP_Query $query ): void {
 	$inst = _get_instance();
 	if ( $query->is_search() ) {
 		$val = $query->get( 'post_type' );
-		if ( empty( $val ) ) {
+		if ( '' === $val ) {
 			$query->set( 'post_type', $inst->target_post_types );
 		}
 	}
@@ -299,9 +299,10 @@ function _cb_pre_get_posts( \WP_Query $query ): void {
  */
 function _cb_posts_search( string $search, \WP_Query $query ): string {
 	$inst = _get_instance();
-	if ( ! $query->is_search() || ! $query->is_main_query() || empty( $search ) ) {
+	if ( ! $query->is_search() || ! $query->is_main_query() || '' === $search ) {
 		return $search;
 	}
+	/** @psalm-suppress UnsupportedPropertyReferenceUsage */  // phpcs:ignore
 	$q = &$query->query_vars;
 
 	global $wpdb;
@@ -322,7 +323,7 @@ function _cb_posts_search( string $search, \WP_Query $query ): string {
 		}
 		$searchand = ' AND ';
 	}
-	if ( ! empty( $search ) ) {
+	if ( '' !== $search ) {
 		$search = " AND ({$search}) ";
 		if ( ! is_user_logged_in() ) {
 			$search .= " AND ($wpdb->posts.post_password = '') ";
@@ -348,7 +349,7 @@ function _create_query( string $term, string $exclusion_prefix, ?string $exact, 
 	$inst = _get_instance();
 	global $wpdb;
 	$search = '';
-	$n      = ! empty( $exact ) ? '' : '%';
+	$n      = ( is_string( $exact ) && '' !== $exact ) ? '' : '%';  // Check for non-empty-string.
 
 	$exclude = $exclusion_prefix && ( substr( $term, 0, 1 ) === $exclusion_prefix );
 	if ( $exclude ) {
@@ -404,7 +405,7 @@ function _cb_posts_join( string $join, \WP_Query $query ): string {
 	global $wpdb;
 	if ( $inst->do_target_post_meta ) {
 		$join .= " INNER JOIN ( SELECT post_id, meta_value FROM $wpdb->postmeta";
-		if ( ! empty( $sql_mks ) ) {
+		if ( '' !== $sql_mks ) {
 			$join .= " WHERE meta_key IN ( $sql_mks )";
 		}
 		$join .= " ) AS postmeta_wpinc_ref ON ($wpdb->posts.ID = postmeta_wpinc_ref.post_id) ";

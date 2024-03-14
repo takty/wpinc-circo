@@ -4,7 +4,7 @@
  *
  * @package Wpinc Ref
  * @author Takuto Yanagida
- * @version 2023-11-04
+ * @version 2024-03-13
  */
 
 declare(strict_types=1);
@@ -97,12 +97,12 @@ function _extend_search_terms( array $terms, string $exclusion_prefix ): array {
 			continue;
 		}
 		$sts = mb_split( '[「『（［｛〈《【〔〖〘〚＜」』）］｝〉》】〕〗〙〛＞、，。．？！：・]+', $term );
-		if ( ! $sts ) {
+		if ( ! is_array( $sts ) ) {
 			$sts = array();
 		}
 		$sts = array_map( '\wpinc\ref\_mb_trim', $sts );
 		foreach ( $sts as $t ) {
-			if ( empty( $t ) ) {
+			if ( '' === $t ) {
 				continue;
 			}
 			$len = mb_strlen( $t );
@@ -141,7 +141,7 @@ function _split_term( string $term ): array {
 	global $wpdb;
 	$bis = array();
 	$chs = preg_split( '//u', $term, -1, PREG_SPLIT_NO_EMPTY );
-	if ( $chs ) {
+	if ( is_array( $chs ) ) {
 		$sws = array_map(
 			function ( $ch ) {
 				return mb_strwidth( $ch );
